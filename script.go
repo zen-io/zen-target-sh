@@ -6,18 +6,18 @@ import (
 	"os/exec"
 	"strings"
 
-	ahoy_targets "gitlab.com/hidothealth/platform/ahoy/src/target"
-	"gitlab.com/hidothealth/platform/ahoy/src/utils"
+	zen_targets "github.com/zen-io/zen-core/target"
+	"github.com/zen-io/zen-core/utils"
 )
 
 type ShScriptConfig struct {
-	ahoy_targets.BaseFields `mapstructure:",squash"`
-	Script                  string   `mapstructure:"script"`
-	Shell                   *string  `mapstructure:"shell"`
-	Args                    []string `mapstructure:"args"`
+	zen_targets.BaseFields `mapstructure:",squash"`
+	Script                 string   `mapstructure:"script"`
+	Shell                  *string  `mapstructure:"shell"`
+	Args                   []string `mapstructure:"args"`
 }
 
-func (ec ShScriptConfig) GetTargets(tcc *ahoy_targets.TargetConfigContext) ([]*ahoy_targets.Target, error) {
+func (ec ShScriptConfig) GetTargets(tcc *zen_targets.TargetConfigContext) ([]*zen_targets.Target, error) {
 	interpolatedStringName, err := tcc.Interpolate(ec.Script, nil)
 	if err != nil {
 		return nil, fmt.Errorf("interpolating script: %w", err)
@@ -32,17 +32,17 @@ func (ec ShScriptConfig) GetTargets(tcc *ahoy_targets.TargetConfigContext) ([]*a
 		pass_env[e] = os.Getenv(e)
 	}
 
-	return []*ahoy_targets.Target{
-		ahoy_targets.NewTarget(
+	return []*zen_targets.Target{
+		zen_targets.NewTarget(
 			ec.Name,
-			ahoy_targets.WithSrcs(map[string][]string{"_src": {interpolatedStringName}}),
-			ahoy_targets.WithOuts([]string{interpolatedStringName}),
-			ahoy_targets.WithVisibility(ec.Visibility),
-			ahoy_targets.WithEnvVars(pass_env),
-			ahoy_targets.WithBinary(),
-			ahoy_targets.WithSecretEnvVars(ec.SecretEnv),
-			ahoy_targets.WithTargetScript("run", &ahoy_targets.TargetScript{
-				Run: func(target *ahoy_targets.Target, runCtx *ahoy_targets.RuntimeContext) error {
+			zen_targets.WithSrcs(map[string][]string{"_src": {interpolatedStringName}}),
+			zen_targets.WithOuts([]string{interpolatedStringName}),
+			zen_targets.WithVisibility(ec.Visibility),
+			zen_targets.WithEnvVars(pass_env),
+			zen_targets.WithBinary(),
+			zen_targets.WithSecretEnvVars(ec.SecretEnv),
+			zen_targets.WithTargetScript("run", &zen_targets.TargetScript{
+				Run: func(target *zen_targets.Target, runCtx *zen_targets.RuntimeContext) error {
 					env_vars := target.GetEnvironmentVariablesList()
 
 					fullCommand := strings.Split(target.Srcs["_src"][0], " ")

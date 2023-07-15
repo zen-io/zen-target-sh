@@ -2,6 +2,8 @@ module github.com/zen-io/zen-target-sh
 
 go 1.20
 
+require github.com/zen-io/zen-core v0.0.0-20230715105113-826c445b50a1
+
 require (
 	atomicgo.dev/cursor v0.1.1 // indirect
 	github.com/bmatcuk/doublestar/v4 v4.6.0 // indirect

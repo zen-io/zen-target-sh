@@ -3,7 +3,6 @@ package own
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"strings"
 
 	zen_targets "github.com/zen-io/zen-core/target"
@@ -11,10 +10,18 @@ import (
 )
 
 type ShScriptConfig struct {
-	zen_targets.BaseFields `mapstructure:",squash"`
-	Script                 string   `mapstructure:"script"`
-	Shell                  *string  `mapstructure:"shell"`
-	Args                   []string `mapstructure:"args"`
+	Name        string            `mapstructure:"name" desc:"Name for the target"`
+	Description string            `mapstructure:"desc" desc:"Target description"`
+	Labels      []string          `mapstructure:"labels" desc:"Labels to apply to the targets"` //
+	Deps        []string          `mapstructure:"deps" desc:"Build dependencies"`
+	PassEnv     []string          `mapstructure:"pass_env" desc:"List of environment variable names that will be passed from the OS environment, they are part of the target hash"`
+	SecretEnv   []string          `mapstructure:"secret_env" desc:"List of environment variable names that will be passed from the OS environment, they are not used to calculate the target hash"`
+	Env         map[string]string `mapstructure:"env" desc:"Key-Value map of static environment variables to be used"`
+	Tools       map[string]string `mapstructure:"tools" desc:"Key-Value map of tools to include when executing this target. Values can be references"`
+	Visibility  []string          `mapstructure:"visibility" desc:"List of visibility for this target"`
+	Script      string            `mapstructure:"script"`
+	Shell       *string           `mapstructure:"shell"`
+	Args        []string          `mapstructure:"args"`
 }
 
 func (ec ShScriptConfig) GetTargets(tcc *zen_targets.TargetConfigContext) ([]*zen_targets.Target, error) {
@@ -43,9 +50,7 @@ func (ec ShScriptConfig) GetTargets(tcc *zen_targets.TargetConfigContext) ([]*ze
 			zen_targets.WithSecretEnvVars(ec.SecretEnv),
 			zen_targets.WithTargetScript("run", &zen_targets.TargetScript{
 				Run: func(target *zen_targets.Target, runCtx *zen_targets.RuntimeContext) error {
-					env_vars := target.GetEnvironmentVariablesList()
-
-					fullCommand := strings.Split(target.Srcs["_src"][0], " ")
+					fullCommand := append([]string{*ec.Shell}, strings.Split(target.Srcs["_src"][0], " ")...)
 					for _, a := range ec.Args {
 						interpolatedArg, err := target.Interpolate(a)
 						if err != nil {
@@ -55,12 +60,7 @@ func (ec ShScriptConfig) GetTargets(tcc *zen_targets.TargetConfigContext) ([]*ze
 						fullCommand = append(fullCommand, interpolatedArg)
 					}
 
-					cmd := exec.Command(*ec.Shell, fullCommand...)
-					cmd.Dir = target.Cwd
-					cmd.Env = env_vars
-					cmd.Stdout = target
-					cmd.Stderr = target
-					return cmd.Run()
+					return target.Exec(fullCommand, "sh run")
 				},
 			}),
 		),

@@ -1,4 +1,4 @@
-package own
+package sh
 
 import (
 	zen_targets "github.com/zen-io/zen-core/target"
